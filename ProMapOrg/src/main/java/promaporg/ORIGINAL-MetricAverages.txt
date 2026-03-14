@@ -1,0 +1,286 @@
+import java.sql.*;
+
+// This class appends three columns at the end of the final product 'master_results' table: one for each metric Open Contact provided in each snapshot
+// mapping result (i.e. 1-finedata.txt) and then populates each column in 'master_results' with the averages from the respective column in the raw energy 
+// mapping data from each individual snapshot
+
+public class MetricAverages {
+
+	// Instance fields
+	private String dbURL;
+	private int start;
+	private int end;
+	private int database;
+
+	// Constructor to initialize instance fields
+	public MetricAverages (String user, String password, int start, int end, String database) {
+		this.dbURL = "jdbc:mariadb://127.0.0.1:3306/?user=" + user + "&password=" + password + "&allowMultiQueries=true&useSSL=false";
+		this.start = start;
+		this.end = end;
+		this.database = database;
+	} // END constructor
+	
+	// Primary method for building the SQL command to add three columns to 'master_results' table
+	public void average () {
+		Connection conn = null;
+		PreparedStatement statementUpdate = null;
+		PreparedStatement statementQuery = null;
+		String [] metric1COMPONENT = new String[end - start + 1]; // Components of the average to be calculated: 200 for the case study's maximum SSs
+		String [] metric2COMPONENT = new String[end - start + 1]; // Components of the average to be calculated: 200 for the case study's maximum SSs
+		String [] metric3COMPONENT = new String[end - start + 1]; // Components of the average to be calculated: 200 for the case study's maximum SSs
+		String[][] metricRetrieval = new String[3][end - start + 1]; // !!! Probably not going to need this
+
+		try {
+			// Obtain persistent interactions from "master_results" table to retrieve data from " metric" columns for executing their averages
+			// Connect to the database
+                        conn = DriverManager.getConnection(dbURL);
+                        // Disable 'AutoCommit' in order to send batch or 'transaction' SQL commands
+                        conn.setAutoCommit(false);
+
+			// Indicator that connection was successful
+                        System.out.println("\n\n\nConnected.\n\n\n");
+
+			// String for adding average columns to "master_results" to report the final averages of all surviving interactions
+			String addColumns = "USE " + database + ";ALTER TABLE master_results ADD metric1AVG varchar(12), ADD metric2AVG varchar(12), ADD metric3AVG varchar(12);ALTER TABLE master_results ADD COLUMN id INT PRIMARY KEY AUTO_INCREMENT;";
+			// Wrap the SQL string command into something SQL can directly process
+			statementUpdate = conn.prepareStatement(addColumns);
+			// Submit the command to MariaDB
+			statementUpdate.executeUpdate();
+			// Now actually execute the submitted commands in MariaDB (like hitting the 'Enter' key to execute)
+			conn.commit();
+
+			// Obtain the size/quantity of records from "master_results": I'll need this later for iterating to obtain averages
+			String retrieveCount = "SELECT COUNT(*) AS total from master_results";
+			PreparedStatement stmtRetrieveCount = conn.prepareStatement(retrieveCount);
+			ResultSet rsCount = stmtRetrieveCount.executeQuery();
+			int amountOfSurvivingIntx = 0;
+			if (rsCount.next()) {
+				// This is the total quantity of surviving interactions ready to use elsewhere
+				amountOfSurvivingIntx = rsCount.getInt("total");
+			} // END 
+
+			// Build string to retrieve surviving interaction's "metric" column data from each "map" table
+			// Retrieve the list of surviving interactions via the "ResultSet" JDBC connector object
+			String retrieveInteraction = "SELECT A_resname, A_resnum, A_resatom, A_atomnum, B_resname, B_resnum, B_resatom, B_atomnum FROM master_results";
+			PreparedStatement stmtRetrieval1 = conn.prepareStatement(retrieveInteraction);
+			ResultSet rs1 = stmtRetrieval1.executeQuery(); // The size of this ResultSet "list" will depend on the amount of surviving mapping results interactions
+
+			// Iterate through each interaction in each snapshot to store "metric1," "metric2," and "metric3"
+			for (int i = 1; i <= amountOfSurvivingIntx; i++) {
+				// Begin stepping through the ResultSet "list" of surviving interactions
+				rs1.next();
+
+				// Populate variables with column values for building upcoming query
+				String aResname = rs1.getString("A_resname");
+                                String aResnum = rs1.getString("A_resnum");                                                                                                                    String aResatom = rs1.getString("A_resatom");
+                                String aAtomnum = rs1.getString("A_atomnum");
+                                String bResname = rs1.getString("B_resname");
+                                String bResnum = rs1.getString("B_resnum");                                                                                                                    String bResatom = rs1.getString("B_resatom");                                                                                                                  String bAtomnum = rs1.getString("B_atomnum");
+
+				// Iterate over the total quantity of snapshots
+				for (int j = 0; j < (end - start + 1); j++) {
+					// Retrieving and processing "metric1" data from all snapshots
+                        		String retrieveMetric1 = "SELECT metric1 FROM map" + (j + 1) + " WHERE A_resname = ? AND A_resnum = ? AND A_resatom = ? AND A_atomnum = ? " + "AND B_resname = ? AND B_resnum = ? AND B_resatom = ? AND B_atomnum = ?";
+                        		PreparedStatement stmtRetrieval2 = conn.prepareStatement(retrieveMetric1);
+					stmtRetrieval2.setString(1, aResname);
+					stmtRetrieval2.setString(2, aResnum);
+					stmtRetrieval2.setString(3, aResatom);
+                        		stmtRetrieval2.setString(4, aAtomnum);
+                        		stmtRetrieval2.setString(5, bResname);
+                        		stmtRetrieval2.setString(6, bResnum);
+                        		stmtRetrieval2.setString(7, bResatom);
+                        		stmtRetrieval2.setString(8, bAtomnum);
+
+                        		ResultSet rs2 = stmtRetrieval2.executeQuery();
+
+					// Retrieving and processing "metric2" data from all snapshots
+					String retrieveMetric2 = "SELECT metric2 FROM map" + (j + 1) + " WHERE A_resname = ? AND A_resnum = ? AND A_resatom = ? AND A_atomnum = ? " + "AND B_resname = ? AND B_resnum = ? AND B_resatom = ? AND B_atomnum = ?";
+                                        PreparedStatement stmtRetrieval3 = conn.prepareStatement(retrieveMetric2);
+                                        stmtRetrieval3.setString(1, aResname);
+                                        stmtRetrieval3.setString(2, aResnum);
+                                        stmtRetrieval3.setString(3, aResatom);
+                                        stmtRetrieval3.setString(4, aAtomnum);
+					stmtRetrieval3.setString(5, bResname);
+                                	stmtRetrieval3.setString(6, bResnum);
+                                        stmtRetrieval3.setString(7, bResatom);
+                                        stmtRetrieval3.setString(8, bAtomnum);
+
+                                        ResultSet rs3 = stmtRetrieval3.executeQuery();
+
+					// Retrieving and processing "metric3" data from all snapshots
+                                        String retrieveMetric3 = "SELECT metric3 FROM map" + (j + 1) + " WHERE A_resname = ? AND A_resnum = ? AND A_resatom = ? AND A_atomnum = ? " + "AND B_resname = ? AND B_resnum = ? AND B_resatom = ? AND B_atomnum = ?";
+                                        PreparedStatement stmtRetrieval4 = conn.prepareStatement(retrieveMetric3);
+                                        stmtRetrieval4.setString(1, aResname);
+                                        stmtRetrieval4.setString(2, aResnum);
+                                        stmtRetrieval4.setString(3, aResatom);
+                                        stmtRetrieval4.setString(4, aAtomnum);
+                                        stmtRetrieval4.setString(5, bResname);
+                                        stmtRetrieval4.setString(6, bResnum);
+                                        stmtRetrieval4.setString(7, bResatom);
+                                        stmtRetrieval4.setString(8, bAtomnum);
+
+                                        ResultSet rs4 = stmtRetrieval4.executeQuery();
+
+					// Store the contents of each above ResultSet object (only 1 item stored in each since only 1 item is ever returned)
+					// Only "rs2" is used for the condition since it, like the other "rs" objects, only has 1 item stored in it - no need
+					// for a loop for these query results
+					if (rs2.next()) {
+						metric1COMPONENT[j] = rs2.getString("metric1");
+						metric2COMPONENT[j] = rs3.getString("metric2");
+						metric3COMPONENT[j] = rs4.getString("metric3");
+					} // END 'if'
+				} // END 'for' for handling the complete set of snapshots
+				
+				// Convert metric#COMPONENT[j] from its current String format to double format
+				double[] metric1COMPONENTAsDouble = Arrays.stream(metric1COMPONENT).mapToDouble(Double::parseDouble).toArray();
+				double[] metric2COMPONENTAsDouble = Arrays.stream(metric2COMPONENT).mapToDouble(Double::parseDouble).toArray();
+				double[] metric3COMPONENTAsDouble = Arrays.stream(metric3COMPONENT).mapToDouble(Double::parseDouble).toArray();
+
+				// Populate "metric1AVG," "metric2AVG," "metric3AVG" for the current surviving interaction
+				// Calculate each "metric's" sum
+				double metric1SUM = 0;
+				double metric2SUM = 0;
+				double metric3SUM = 0;
+				for (int k = 0; k < (end - start + 1); k++) {
+					metric1SUM = metric1SUM + metric1COMPONENTAsDouble[k];
+					metric2SUM = metric2SUM + metric2COMPONENTAsDouble[k];
+					metric3SUM = metric3SUM + metric3COMPONENTAsDouble[k];
+				} // END 'for'
+
+				// Calculate each metric's average
+				double metric1AVG = 0;
+				double metric2AVG = 0;
+				double metric3AVG = 0;
+				metric1AVG = metric1SUM / (end - start + 1);
+				metric2AVG = metric2SUM / (end - start + 1);
+				metric3AVG = metric3SUM / (end - start + 1);
+
+				// Populate "metric1AVG," "metric2AVG" and "metric3AVG" columns in "master_results"; the quantity of times to execute this
+				// submission is controlled by the loop I'm currently in
+				// Submit calculated "metric1" average  into "metric1AVG" column in "master_results"
+				String submitMetric1AVG = "UPDATE master_results SET metric1AVG = ? WHERE id = ?";
+				// Wrap the SQL string command into something SQL can directly process
+				PreparedStatement stmtPopulateMetric1AVG = conn.prepareStatement(submitMetric1AVG);
+				stmtPopulateMetric1AVG.setString(1, Double.toString(metric1AVG));
+				stmtPopulateMetric1AVG.setString(2, Integer.toString(i));
+				// Submit the command to MariaDB
+				stmtPopulateMetric1AVG.executeUpdate();
+				// Now actually execute the submitted commands in MariaDB (like hitting the 'Enter' key to execute)
+                        	conn.commit();
+
+				// Submit calculated "metric2" average  into "metric2AVG" column in "master_results"
+				String submitMetric2AVG = "UPDATE master_results SET metric2AVG = ? WHERE id = ?";
+				// Wrap the SQL string command into something SQL can directly process
+				PreparedStatement stmtPopulateMetric2AVG = conn.prepareStatement(submitMetric2AVG);
+				stmtPopulateMetric2AVG.setString(1, Double.toString(metric2AVG));
+				stmtPopulateMetric2AVG.setString(2, Integer.toString(i));
+				// Submit the command to MariaDB
+				stmtPopulateMetric2AVG.executeUpdate();
+				// Now actually execute the submitted commands in MariaDB (like hitting the 'Enter' key to execute)
+                        	conn.commit();
+
+
+				// Submit calculated "metric3" average  into "metric3AVG" column in "master_results"
+				String submitMetric3AVG = "UPDATE master_results SET metric3AVG = ? WHERE id = ?";
+				// Wrap the SQL string command into something SQL can directly process
+				PreparedStatement stmtPopulateMetric3AVG = conn.prepareStatement(submitMetric3AVG);
+				stmtPopulateMetric3AVG.setString(1, Double.toString(metric3AVG));
+				stmtPopulateMetric3AVG.setString(2, Integer.toString(i));
+				// Submit the command to MariaDB
+				stmtPopulateMetric3AVG.executeUpdate();
+				// Now actually execute the submitted commands in MariaDB (like hitting the 'Enter' key to execute)
+                        	conn.commit();
+
+			} // END 'for' for stepping through complete set of surviving interactions
+
+
+
+
+
+
+
+
+/*			// "map" table/snapshot counter for programmatic coding of query
+			int mapCounter = 0;
+
+			while (rs1.next()) { // This ResultSet contains many items: many surviving interactions
+				mapCounter = mapCounter++;
+				String aResname = rs1.getString("A_resname");
+				String aResnum = rs1.getString("A_resnum");
+				String aResatom = rs1.getString("A_resatom");
+				String aAtomnum = rs1.getString("A_atomnum");
+				String bResname = rs1.getString("B_resname");
+				String bResnum = rs1.getString("B_resnum");
+				String bResatom = rs1.getString("B_resatom");
+				String bAtomnum = rs1.getString("B_atomnum");
+
+				// Retrieving and pricessing "metric1" data from all snapshots
+				String retrieveMetric1 = "SELECT metric1 FROM map" + mapCounter + " WHERE A_resname = ? AND A_resnum = ? AND A_resatom = ? AND A_atomnum = ? " + "AND B_resname = ? AND B_resnum = ? AND B_resatom = ? AND B_atomnum = ?";
+				PreparedStatement stmtRetrieval2 = conn.prepareStatement(retrieveMetric1);
+				stmtRetrieval2.setString(1, aResname);
+				stmtRetrieval2.setString(2, aResnum);
+				stmtRetrieval2.setString(3, aResatom);
+				stmtRetrieval2.setString(4, aAtomnum);
+				stmtRetrieval2.setString(5, bResname);
+				stmtRetrieval2.setString(6, bResnum);
+				stmtRetrieval2.setString(7, bResatom);
+				stmtRetrieval2.setString(8, bAtomnum);
+	
+				ResultSet rs2 = stmtRetrieval2.executeQuery();
+
+				// Retrieving and pricessing "metric2" data from all snapshots
+				String retrieveMetric2 = "SELECT metric2 FROM map" + mapCounter + " WHERE A_resname = ? AND A_resnum = ? AND A_resatom = ? AND A_atomnum = ? " + "AND B_resname = ? AND B_resnum = ? AND B_resatom = ? AND B_atomnum = ?";
+                                PreparedStatement stmtRetrieval3 = conn.prepareStatement(retrieveMetric2);
+                                stmtRetrieval3.setString(1, aResname);
+                                stmtRetrieval3.setString(2, aResnum);
+                                stmtRetrieval3.setString(3, aResatom);
+                                stmtRetrieval3.setString(4, aAtomnum);
+                                stmtRetrieval3.setString(5, bResname);
+                                stmtRetrieval3.setString(6, bResnum);
+				stmtRetrieval3.setString(7, bResatom);
+                                stmtRetrieval3.setString(8, bAtomnum);
+
+                                ResultSet rs3 = stmtRetrieval3.executeQuery();
+
+				while (rs2.next()) { // This ResultSet contains only one item: the one surviving interaction being considered from the above queries as they are found in the current "map" snapshot being analyzed; 
+					metric1COMPONENT[mapCounter] = rs2.getString("metric1");
+
+				} // END 'while'
+
+			} // END 'while'
+
+// ********************************************** HIGHLY LIKELY TO DELETE IN THIS BLOCK BELOW **********************************************			
+			// Outer loop controls which specific "metric" column I'm currently working with - it will always and only be '3'
+			for(int i = 0; i < 3; i++) {
+				// Inner loop controls the table number of "map" being looked at - this is variable from user's quantity of snapshots supplied
+				for(int j = 0; j < (end - start + 1); j++) {
+					// Build actual query string
+
+                        		// Wrap the SQL string command into something SQLN can directly process
+					statementQuery = conn.prepareStatement(metricRetrieval[i][j]);
+                        		// Now submit the command to MariaDB
+					ResultSet rs = statementQuery.executeQuery();
+                        		// Normally 'conn.commit();' would go here, but since I'm only querying a database, I don't need it at all
+
+				} // END 'for'
+			} // END 'for'
+
+			// Build string to add three columns to 'master_results' table
+		
+			// Build string to execute averages over all input raw data tables
+// ********************************************** HIGHLY LIKELY TO DELETE IN THIS BLOCK ABOVE ********************************************** */
+
+		} // END 'try'
+		catch (SQLException e) {
+                        System.out.println("\n\n\nNot connected.");
+                        e.printStackTrace();
+
+                        // If any of the SQL commands should fail for whatever reason, abort all
+                        // commands and rollback to DB's pr3vious state
+                        conn.rollback();
+                        e.printStackTrace();
+                } // END 'catch' block
+	} // END method 'average'
+
+} // END class 'MetricAverages'
+

@@ -1,0 +1,123 @@
+package promaporg;
+
+import java.sql.*;
+import java.io.*;
+
+// This custom class loads formatted mapping files into MariaDB tables and then does table joins on all loaded files
+
+public class IterativeLoader {
+	// Declaring instance fields
+	private int maxNumOfFiles;
+	// Get working directory
+	private String cwd = System.getProperty("user.dir");
+	// Database info
+	private String user = "u0_a191";
+	//private String user = "haydn";
+	private String password = "cheetah";
+	//private String dbURL = "jdbc:mariadb://127.0.0.1:3306/?user=" + user + "&password=" + password + "&allowMultiQueries=true&useSSL=false";
+	private String dbURL = "jdbc:mariadb://127.0.0.1:3306/?user=" + user + "&password=" + password + "&allowMultiQueries=true"; // A specific DB isn't invoked b/c it'll be created later
+	// Establish connection to the database
+	private Connection conn = null;
+	// Make a 'PreparedStatement' object
+	private PreparedStatement statement = null;
+
+	// Constructor to initiate instance field
+	public IterativeLoader(int maxNumOfFiles) {
+		this.maxNumOfFiles = maxNumOfFiles;
+	} // END constructor
+	
+	// Method to load files into MariaDB tables in a database
+	public void loadFiles() throws SQLException {
+		try {
+			// Connect to the database
+			conn = DriverManager.getConnection(dbURL);
+			// Disable 'AutoCommit' in order to send batch or 'transaction' SQL commands
+			conn.setAutoCommit(false);
+			System.out.println("\n\n\nConnected.\n\n\n");
+
+			// Create database
+			String createDB = "CREATE DATABASE IF NOT EXISTS ElIndioCuauhtemoc;USE ElIndioCuauhtemoc;";
+			// Wrap the SQL string command into something SQLN can directly process
+			statement = conn.prepareStatement(createDB);
+			// Now submit the command to MariaDB
+			statement.executeUpdate();
+			// Now actually execute the submitted commands in MariaDB (like hitting the 'Enter' key to execute)
+			conn.commit();
+
+			// Iteratively build SQL code for each input file
+			for (int i = 1; i <= maxNumOfFiles; i++) {
+				String createTable = "create table map" + i + "(A_resname varchar(3), A_resnum varchar(6), A_resatom varchar(4), A_atomnum varchar(6), B_resname varchar(3), B_resnum varchar(6), B_resatom varchar(4), B_atomnum varchar(6), metric1 varchar(12), metric2 varchar(12), metric3 varchar(12));";
+				String submitFile = "load data infile " + "'" + cwd + File.separator + i + "-finedata.csv' into table map" + i + " fields terminated by \",\" lines terminated by \"\\n\"";
+				// Wrap the SQL string command into something SQLN can directly process
+                        	statement = conn.prepareStatement(createTable + submitFile);
+                		// Now submit the command to MariaDB
+                        	statement.executeUpdate();
+                        	// Now actually execute the submitted commands in MariaDB (like hitting the 'Enter' key to execute)
+                        	conn.commit();
+
+				// Add a new column and make it the primary key
+				String addIndex = "ALTER TABLE map" + i + " ADD COLUMN dataIndex INT AUTO_INCREMENT PRIMARY KEY FIRST;";
+				// Wrap the SQL string command into something SQL can directly process
+				statement = conn.prepareStatement(addIndex);
+                                // Now submit the command to MariaDB
+				statement.executeUpdate();
+				// Now actually execute the submitted commands in MariaDB (like hitting the 'Enter' key to execute)
+                                conn.commit();
+			} // END 'for' loop
+
+		} // END 'try' block
+		catch (SQLException e) {
+			System.out.println("\n\n\nNot connected.");
+			e.printStackTrace();
+
+			// If any of the SQL commands should fail for whatever reason, abort all
+			// commands and rollback to DB's pr3vious state
+			conn.rollback();
+			e.printStackTrace();
+		} // END 'catch' block
+	} // END method 'loadFiles'
+	
+	// Method to build & submit table joins - tables must have first been - should previous connection've been closed?  could it have been kept open?
+	public void tableJoins () throws SQLException { // 'throws SQLException' MUST explicitly be shown since code that opens DB connection that triggers
+	// SQLException was technically not used in this method but in previous method instead, however this method must close the connection which is an
+	// action that would throw a SQLException; the open connection remains valid across methods because the connection object is an instance field which
+	// is visible/"global" across all methods in this class
+		
+		/*String workingMaxNumOfFiles = maxNumOfFiles - 1;
+		String myString = "create table results as select map1.A_resname, map1.A_resnum, map1.A_resatom, map1.A_atomnum, map1.B_resname, map1.B_resnum, map1.B_resatom, map1.B_atomnum from map1";
+                for (int i = 1; i <= (maxNumOfFiles - 1); i++) { // Terminating condition is (maxNumOfFiles - 1)
+                        myString = myString + " JOIN map" + (i + 1) + " ON map" + i + ".A_resname = map" + (i + 1) + ".A_resname AND map" + i + ".A_resnum = map" + (i + 1) + ".A_resnum AND map" + i + ".A_resatom = map" + (i + 1) + ".A_resatom AND map" + i + ".A_atomnum = map" + (i + 1) + ".A_atomnum AND map" + i + ".B_resname = map" + (i + 1) + ".B_resname AND map" + i + ".B_resnum = map" + (i + 1) + ".B_resnum AND map" + i + ".B_resatom = map" + (i + 1) + ".B_resatom AND map" + i + ".B_atomnum = map" + (i + 1) + ".B_atomnum";
+                }*/
+
+		FlexibleJoin myJoin = new FlexibleJoin(maxNumOfFiles);
+
+                //myString = myString + ";";
+
+		try {
+			// !!! Opening a connection to the 'conn' object isn't necessary since connection was opened in another method & 'conn'
+			// is an instance field !!!
+			// !!! Doing 'conn.setAutoCommit(false);' is not required as its execution in previous method remains valid even here !!!
+
+			// Wrap the SQL string command into something SQL can directly process
+                	statement = conn.prepareStatement(myJoin.join());
+                	// Now submit the command to MariaDB
+                	statement.executeUpdate();
+                	// Now actually execute the submitted commands in MariaDB (like hitting the 'Enter' key to execute)
+                	conn.commit();
+		} // END 'try' block
+		catch (SQLException e) {
+                        System.out.println("\n\n\nNot connected.");
+                        e.printStackTrace();
+                                                                                                                                                                                       // If any of the SQL commands should fail for whatever reason, abort all
+                        // commands and rollback to DB's pr3vious state
+                        conn.rollback();                                                                                                                                               e.printStackTrace();                                                                                                                                   } // END 'catch' block
+		// 'finally' block is ALWAYS executed, so it serves as a cleanup code repository
+		// for closing connections and what not whether an exception is triggered or not
+		finally {
+			statement.close();
+			conn.setAutoCommit(true);
+			conn.close();
+		} // END 'finally' block
+
+	} // END method 'tableJoins'
+} // END 'IterativeLoader' class

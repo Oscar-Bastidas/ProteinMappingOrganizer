@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="windowing.IterativeLoaderTest" time="12.08" tests="1" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="21"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/storage/emulated/0/Download/windowing/target/test-classes:/storage/emulated/0/Download/windowing/target/classes:/data/data/com.termux/files/home/.m2/repository/org/junit/jupiter/junit-jupiter/5.11.3/junit-jupiter-5.11.3.jar:/data/data/com.termux/files/home/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.11.3/junit-jupiter-api-5.11.3.jar:/data/data/com.termux/files/home/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/data/data/com.termux/files/home/.m2/repository/org/junit/platform/junit-platform-commons/1.11.3/junit-platform-commons-1.11.3.jar:/data/data/com.termux/files/home/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/data/data/com.termux/files/home/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.11.3/junit-jupiter-params-5.11.3.jar:/data/data/com.termux/files/home/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.11.3/junit-jupiter-engine-5.11.3.jar:/data/data/com.termux/files/home/.m2/repository/org/junit/platform/junit-platform-engine/1.11.3/junit-platform-engine-1.11.3.jar:/data/data/com.termux/files/home/.m2/repository/org/mockito/mockito-core/5.11.0/mockito-core-5.11.0.jar:/data/data/com.termux/files/home/.m2/repository/net/bytebuddy/byte-buddy/1.14.12/byte-buddy-1.14.12.jar:/data/data/com.termux/files/home/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.12/byte-buddy-agent-1.14.12.jar:/data/data/com.termux/files/home/.m2/repository/org/objenesis/objenesis/3.3/objenesis-3.3.jar:/data/data/com.termux/files/home/.m2/repository/org/mockito/mockito-inline/5.2.0/mockito-inline-5.2.0.jar:/data/data/com.termux/files/home/.m2/repository/org/mariadb/jdbc/mariadb-java-client/2.1.2/mariadb-java-client-2.1.2.jar:"/>
+    <property name="java.vm.vendor" value="Termux"/>
+    <property name="sun.arch.data.model" value="32"/>
+    <property name="java.vendor.url" value="https://openjdk.org/"/>
+    <property name="user.timezone" value="GMT"/>
+    <property name="os.name" value="Linux"/>
+    <property name="java.vm.specification.version" value="21"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.boot.library.path" value="/data/data/com.termux/files/usr/lib/jvm/java-21-openjdk/lib"/>
+    <property name="sun.java.command" value="/storage/emulated/0/Download/windowing/target/surefire/surefirebooter-20251021131005231_3.jar /storage/emulated/0/Download/windowing/target/surefire 2025-10-21T13-10-04_385-jvmRun1 surefire-20251021131005231_1tmp surefire_0-20251021131005231_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="/storage/emulated/0/Download/windowing/target/test-classes:/storage/emulated/0/Download/windowing/target/classes:/data/data/com.termux/files/home/.m2/repository/org/junit/jupiter/junit-jupiter/5.11.3/junit-jupiter-5.11.3.jar:/data/data/com.termux/files/home/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.11.3/junit-jupiter-api-5.11.3.jar:/data/data/com.termux/files/home/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/data/data/com.termux/files/home/.m2/repository/org/junit/platform/junit-platform-commons/1.11.3/junit-platform-commons-1.11.3.jar:/data/data/com.termux/files/home/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/data/data/com.termux/files/home/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.11.3/junit-jupiter-params-5.11.3.jar:/data/data/com.termux/files/home/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.11.3/junit-jupiter-engine-5.11.3.jar:/data/data/com.termux/files/home/.m2/repository/org/junit/platform/junit-platform-engine/1.11.3/junit-platform-engine-1.11.3.jar:/data/data/com.termux/files/home/.m2/repository/org/mockito/mockito-core/5.11.0/mockito-core-5.11.0.jar:/data/data/com.termux/files/home/.m2/repository/net/bytebuddy/byte-buddy/1.14.12/byte-buddy-1.14.12.jar:/data/data/com.termux/files/home/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.12/byte-buddy-agent-1.14.12.jar:/data/data/com.termux/files/home/.m2/repository/org/objenesis/objenesis/3.3/objenesis-3.3.jar:/data/data/com.termux/files/home/.m2/repository/org/mockito/mockito-inline/5.2.0/mockito-inline-5.2.0.jar:/data/data/com.termux/files/home/.m2/repository/org/mariadb/jdbc/mariadb-java-client/2.1.2/mariadb-java-client-2.1.2.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/data/data/com.termux/files/home"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2025-04-15"/>
+    <property name="java.home" value="/data/data/com.termux/files/usr/lib/jvm/java-21-openjdk"/>
+    <property name="file.separator" value="/"/>
+    <property name="basedir" value="/storage/emulated/0/Download/windowing"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="surefire.real.class.path" value="/storage/emulated/0/Download/windowing/target/surefire/surefirebooter-20251021131005231_3.jar"/>
+    <property name="sun.management.compiler" value="HotSpot Tiered Compilers"/>
+    <property name="java.runtime.version" value="21.0.7"/>
+    <property name="user.name" value="u0_a191"/>
+    <property name="stdout.encoding" value="UTF-8"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="3.18.14-14676478"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="javacpp.platform" value="android-arm"/>
+    <property name="java.vm.name" value="OpenJDK Server VM"/>
+    <property name="localRepository" value="/data/data/com.termux/files/home/.m2/repository"/>
+    <property name="java.vendor.url.bug" value="https://bugreport.java.com/bugreport/"/>
+    <property name="java.io.tmpdir" value="/data/data/com.termux/files/usr/tmp/"/>
+    <property name="java.version" value="21.0.7"/>
+    <property name="user.dir" value="/storage/emulated/0/Download/windowing"/>
+    <property name="os.arch" value="arm"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="native.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/usr/java/packages/lib:/lib:/usr/lib"/>
+    <property name="stderr.encoding" value="UTF-8"/>
+    <property name="java.vm.info" value="mixed mode"/>
+    <property name="java.vendor" value="Termux"/>
+    <property name="java.vm.version" value="21.0.7"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="65.0"/>
+  </properties>
+  <testcase name="testTableJoins_WritesFullSQLToFile" classname="windowing.IterativeLoaderTest" time="11.82">
+    <system-out><![CDATA[✅ SQL written to: target/full_query.sql
+=== Preview of captured SQL ===
+USE testdb;CREATE TABLE main_results1 AS SELECT A_vs_B_glycans_hump_100pcnt_50W_1.A_resname, A_vs_B_glycans_hump_100pcnt_50W_1.A_resnum, A_vs_B_glycans_hump_100pcnt_50W_1.A_resatom, A_vs_B_glycans_hump_100pcnt_50W_1.A_atomnum, A_vs_B_glycans_hump_100pcnt_50W_1.B_resname, A_vs_B_glycans_hump_100pcnt_50W_1.B_resnum, A_vs_B_glycans_hump_100pcnt_50W_1.B_resatom, A_vs_B_glycans_hump_100pcnt_50W_1.B_atomnum FROM A_vs_B_glycans_hump_100pcnt_50W_1 JOIN A_vs_B_glycans_hump_100pcnt_50W_2 ON A_vs_B_glycans_hump_100pcnt_50W_1.A_resname = A_vs_B_glycans_hump_100pcnt_50W_2.A_resname AND A_vs_B_glycans_hump_100pcnt_50W_1.A_resnum = A_vs_B_glycans_hump_100pcnt_50W_2.A_resnum AND A_vs_B_glycans_hump_100pcnt_50W_1.A_resatom = A_vs_B_glycans_hump_100pcnt_50W_2.A_resatom AND A_vs_B_glycans_hump_100pcnt_50W_1.A_atomnum = A_vs_B_glycans_hump_100pcnt_50W_2.A_atomnum AND A_vs_B_glycans_hump_100pcnt_50W_1.B_resname = A_vs_B_glycans_hump_100pcnt_50W_2.B_resname AND A_vs_B_glycans_hump_100pcnt_50W_1.B_resnum = A...
+]]></system-out>
+    <system-err><![CDATA[WARNING: A Java agent has been loaded dynamically (/data/data/com.termux/files/home/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.12/byte-buddy-agent-1.14.12.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+  </testcase>
+</testsuite>

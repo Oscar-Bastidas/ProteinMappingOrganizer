@@ -1,0 +1,185 @@
+package partialOccupancy;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.mockito.Mockito;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+public class AppTest {
+
+    private IterativeUnion iterativeUnion;
+
+    @BeforeEach
+    void setup() {
+        // Parameters are arbitrary here since we’re not actually hitting the DB
+        iterativeUnion = new IterativeUnion(
+                "fakeUser",
+                "fakePassword",
+                "fakeDB",
+                1,   // startIncrementor
+                50,   // endIncrementor
+                200,  // totalQuantity
+                1,   // currentResultsTableIndex
+                25    // windowFraction
+        );
+    }
+
+    @Test
+    void testBuildUnion() {
+        // Call the static buildUnion method directly
+        String sql = IterativeUnion.buildUnion(1, 50, 200, 1, 25);
+
+        System.out.println("Generated SQL:\n" + sql);
+
+        // Assert some structure in the query
+        assertTrue(sql.startsWith("SELECT"));
+        assertTrue(sql.contains("map1"));
+        assertTrue(sql.contains("map3"));
+        assertTrue(sql.contains("HAVING COUNT(*) >= 25"));
+    }
+
+    @Test
+    void testSubmitUnionWithMocks() throws Exception {
+        // --- Mock JDBC classes ---
+        Connection mockConn = mock(Connection.class);
+        Statement mockStmt = mock(Statement.class);
+
+        // Define what happens when methods are called
+        when(mockConn.createStatement()).thenReturn(mockStmt);
+
+        // Override DriverManager to always return our mockConn
+        DriverManager.setLogWriter(null); // ensure no warnings
+        DriverManager.registerDriver(new java.sql.Driver() {
+            @Override
+            public Connection connect(String url, java.util.Properties info) throws SQLException {
+                return mockConn; // always return the mock connection
+            }
+            @Override public boolean acceptsURL(String url) { return true; }
+            @Override public java.sql.DriverPropertyInfo[] getPropertyInfo(String url, java.util.Properties info) { return new java.sql.DriverPropertyInfo[0]; }
+            @Override public int getMajorVersion() { return 1; }
+            @Override public int getMinorVersion() { return 0; }
+            @Override public boolean jdbcCompliant() { return false; }
+            @Override public java.util.logging.Logger getParentLogger() { return java.util.logging.Logger.getGlobal(); }
+        });
+
+        // Act: call submitUnion (but it will use mocks)
+        try {
+            iterativeUnion.submitUnion();
+        } catch (SQLException e) {
+            // In case your submitUnion has rollback logic, just catch it
+            System.out.println("Caught SQLException: " + e.getMessage());
+        }
+
+        // Verify interaction: check that our mocked statement was "used"
+        verify(mockConn, atLeastOnce()).createStatement();
+        verify(mockStmt, atLeastOnce()).execute(anyString());
+    }
+}
+
+// *************************************
+/*package partialOccupancy;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class AppTest {
+
+    @Test
+    void testTrueIsTrue() {
+        // Simple sanity check
+        assertTrue(true, "Basic sanity test: true is true");
+    }
+
+    // Example placeholder test for IterativeUnion
+    @Test
+    void testBuildUnionString() {
+        // Example parameters
+        int startIncrementor = 1;
+        int endIncrementor = 20;
+        int totalQuantity = 200;
+        int currentResultsTableIndex = 1;
+        int windowFraction = 10;
+
+        // Call the method to generate the SQL string
+        String sqlQuery = IterativeUnion.buildUnion(
+                startIncrementor,
+                endIncrementor,
+                totalQuantity,
+                currentResultsTableIndex,
+                windowFraction
+        );
+
+        // Check that the string contains expected parts
+        assertNotNull(sqlQuery, "SQL query should not be null");
+        assertTrue(sqlQuery.contains("FROM map1"), "Query should include map1");
+        assertTrue(sqlQuery.contains("FROM map2"), "Query should include map2");
+        assertTrue(sqlQuery.contains("HAVING COUNT(*) = 10"), "Query should have correct windowFraction");
+    }
+
+    // Add more test methods here as you expand functionality
+}*/
+
+//**************************************************************
+/*package partialOccupancy;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+class AppTest {
+
+    @Test
+    void testApp() {
+        assertTrue(true);
+    }
+}*/
+
+
+
+// **********************************************************
+// THE CODE BELOW IS THE ORIGINAL UNIT TEST CODE GENERATED BY MAVEN FOR THE OLD VERSION OF JUNIT
+
+/*package partialOccupancy;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite; */
+
+/**
+ * Unit test for simple App.
+ */
+/*public class AppTest 
+    extends TestCase
+{ */
+    /**
+     * Create the test case
+     *
+     * @param testName name of the test case
+     */
+    /*public AppTest( String testName )
+    {
+        super( testName );
+    }*/
+
+    /**
+     * @return the suite of tests being tested
+     */
+    /*public static Test suite()
+    {
+        return new TestSuite( AppTest.class );
+    }*/
+
+    /**
+     * Rigourous Test :-)
+     */
+    /*public void testApp()
+    {
+        assertTrue( true );
+    }
+}*/

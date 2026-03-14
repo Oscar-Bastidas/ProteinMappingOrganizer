@@ -1,0 +1,214 @@
+package promaporg;
+
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.FileNotFoundException;
+
+public class FlexibleJoin {
+
+	// Instance fields
+	private int maxNumOfFiles;
+	private int start; // ORIGINALLY was not passed as a parameter to this class, but I this is a modification I think I'll need
+	private int end; // ORIGINALLY was not passed as a parameter to this class, but I this is a modification I think I'll need
+        private int wholeQuotient;
+        private int leftOvers;
+        private int tracker;
+        private int joinLimit;
+
+	// Constructor to initialize instance fields
+	// public FlexibleJoin (int maxNumOfFiles) { // ORIGINAL
+	public FlexibleJoin (int maxNumOfFiles, int start, int end) {
+		this.maxNumOfFiles = maxNumOfFiles;
+		wholeQuotient = 0;
+		leftOvers = 0;
+		//tracker = 1; // ORIGINAL
+		tracker = start;
+		this.end = end; // ORIGINALLY was not passed as a parameter to this class, but I this is a modification I think I'll need
+		joinLimit = 60;
+	} // END constructor
+
+	// Primary method for caerying out table joins which generates intermediate "results" tables
+	public String join () {
+		String cwd = System.getProperty("user.dir");
+		/*int maxNumOfFiles = 200;
+		int wholeQuotient = 0;
+		int leftOvers = 0;
+		int tracker = 1;
+		int joinLimit = 60;*/
+
+		int i = 0;
+
+		boolean joinOnResults = false;
+
+		String myString = "";
+		try {
+			PrintWriter writer = new PrintWriter(cwd + File.separator + "mammothJoin.txt","UTF-8");
+
+			// Condition 1): to handle if the total needed quantity of join statements exceeds SQL limit of 61 join statements
+			if (maxNumOfFiles > (joinLimit + 1)) {
+				// Establishes that later I'll have to do one big join over all results tables to get one ultimate results table
+				joinOnResults = true;
+				// DIAGNOSTIC:
+				System.out.println("I've exceeded join limit");
+				// Variable "wholeQuotient" refers to the quantity of "join" statements
+				wholeQuotient = maxNumOfFiles/joinLimit;
+				// Is "leftOvers" referring to number of tables over which to join?  Or the quantity of join statements themselves?
+				leftOvers = maxNumOfFiles - wholeQuotient;
+
+				// This loop counts the quantity of batches of join statements (1 batch contains 61 join statements)
+				for (i = 1; i <= wholeQuotient; i++) {
+					// DIAGNOSTIC
+					System.out.println("****************** MAIN SET NUMBER; " + i);
+					myString = myString + "create table results" + i + " as select map" + tracker +".A_resname, map" + tracker + ".A_resnum, map" + tracker + ".A_resatom, map" + tracker + ".A_atomnum, map" + tracker + ".B_resname, map" + tracker + ".B_resnum,map" + tracker + ".B_resatom, map" + tracker + ".B_atomnum from map" + tracker;
+
+					// This loop composes the actual SQL code for each batch mentioned above
+					for (int j = 1; j <= joinLimit; j++) {
+						// DIAGNOSTIC:
+						System.out.println("JOIN number: " + tracker);
+						myString = myString + " JOIN map" + (tracker + 1) + " ON map" + tracker + ".A_resname = map" + (tracker + 1) + ".A_resname AND map" + tracker + ".A_resnum = map" + (tracker + 1) + ".A_resnum AND map" + tracker + ".A_resatom = map" + (tracker + 1) + ".A_resatom AND map" + tracker + ".A_atomnum = map" + (tracker + 1) + ".A_atomnum AND map" + tracker + ".B_resname = map" + (tracker + 1) + ".B_resname AND map" + tracker + ".B_resnum = map" + (tracker + 1) + ".B_resnum AND map" + tracker + ".B_resatom = map" + (tracker + 1) + ".B_resatom AND map" + tracker + ".B_atomnum = map" + (tracker + 1) + ".B_atomnum";
+						tracker++;
+					} // END 'for'
+					myString = myString + ";";
+				} // END 'for'
+				
+				// 'if' block to handle situation where there's non-zero modulus: i.e. total number of files doesn't evenly capture 61 join
+				// statements (is not a multiple of 61) so there's a non-zero remainder/modulus - if total number of files does evenly capture
+				// 61 join statements (is a multiple of 61) then this block will not be addressed.  Although internal 'for' loop counter would
+				// naturally prevent a zero modulus situation from generating additional join statements, there would be no way to control
+				// the generation of a needed, separate 'create' statement for leftover/non-zero modulus join statements
+				if ((maxNumOfFiles % joinLimit) != 0) {
+					myString = myString + "create table results" + i + " as select map" + tracker + ".A_resname, map" + tracker + ".A_resnum, map" + tracker + ".A_resatom, map" + tracker + ".A_atomnum, map" + tracker + ".B_resname, map" + tracker + ".B_resnum,map" + tracker + ".B_resatom, map" + tracker + ".B_atomnum from map" + tracker;
+					// Loop to handle remaining join statements beyond the sets of 61 done above - guaranteed to be less than limit of 61
+					//for (int j = tracker; j < maxNumOfFiles; j++) { // ORIGINAL
+					for (int j = tracker; j < end; j++) {
+						// DIAGNOSTIC
+						System.out.println("JOIN number in the leftovers: " + j);
+
+						myString = myString + " JOIN map" + (j + 1) + " ON map" + j + ".A_resname = map" + (j + 1) + ".A_resname AND map" + j + ".A_resnum = map" + (j + 1) + ".A_resnum AND map" + j + ".A_resatom = map" + (j + 1) + ".A_resatom AND map" + j + ".A_atomnum = map" + (j + 1) + ".A_atomnum AND map" + j + ".B_resname = map" + (j + 1) + ".B_resname AND map" + j + ".B_resnum = map" + (j + 1) + ".B_resnum AND map" + j + ".B_resatom = map" + (j + 1) + ".B_resatom AND map" + j + ".B_atomnum = map" + (j + 1) + ".B_atomnum";
+					} // END 'for'
+					myString = myString + ";";
+				} // END 'if'
+
+				// Print the present batch here
+				writer.println(myString);
+
+				// DIAGNOSTIC
+				System.out.println("i from bulk batches and non-zero modulus: " + i); 
+
+			} // END 'if'
+
+			// Condition 2): to handle if the total needed quantity of join statements is less than or equal to SQL limit of 61 join statements
+			if (maxNumOfFiles <= (joinLimit + 1)) {
+				// Establishes that I do not need to do a join over individual results tables since the quantity of files/tables lies within
+				// one single join operation (i.e. quantity of tables/files is <= 61 which is MariaDB's limit of tables in a table join)
+				joinOnResults = false;
+				// DIAGNOSTIC:
+				System.out.println("I've NOT exceeded join limit");
+				myString = "create table master_results as select map" + tracker + ".A_resname, map" + tracker + ".A_resnum,map" + tracker + ".A_resatom, map" + tracker + ".A_atomnum, map" + tracker + ".B_resname, map" + tracker + ".B_resnum,map" + tracker + ".B_resatom, map" + tracker + ".B_atomnum from map" + tracker;
+				//for (int j = 1; j <= joinLimit; j++) { // ORIGINAL
+				for (int j = tracker; j < end; j++) {
+					//myString = myString + " JOIN map" + (j + 1) + " ON map" + j + ".A_resname = map" + (j + 1) + ".A_resname AND map" + j + ".A_resnum = map" + (j + 1) + ".A_resnum AND map" + j + ".A_resatom = map" + (j + 1) + ".A_resatom AND map" + j + ".A_atomnum = map" + (j + 1) + ".A_atomnum AND map" + j + ".B_resname = map" + (j+ 1) + ".B_resname AND map" + j + ".B_resnum = map" + (j + 1) + ".B_resnum AND map" + j + ".B_resatom = map" + (j + 1) + ".B_resatom AND map" + j + ".B_atomnum = map" + (j + 1) + ".B_atomnum"; // ORIGINAL
+					myString = myString + " JOIN map" + (tracker + 1) + " ON map" + tracker + ".A_resname = map" + (tracker + 1) + ".A_resname AND map" + tracker + ".A_resnum = map" + (tracker + 1) + ".A_resnum AND map" + tracker + ".A_resatom = map" + (tracker + 1) + ".A_resatom AND map" + tracker + ".A_atomnum = map" + (tracker + 1) + ".A_atomnum AND map" + tracker + ".B_resname = map" + (tracker + 1) + ".B_resname AND map" + j + ".B_resnum = map" + (tracker + 1) + ".B_resnum AND map" + tracker + ".B_resatom = map" + (tracker + 1) + ".B_resatom AND map" + tracker + ".B_atomnum = map" + (tracker + 1) + ".B_atomnum";
+					tracker++;
+                                } // END 'for'
+				myString = myString + ";";
+				// Print the present batch here
+				writer.println(myString);
+
+				return myString;
+			} // END 'if'
+			
+			// Final table join on all results tables (but only if Condition 1 was met)
+			if (joinOnResults == true) {
+				writer.println("");
+				writer.println(masterJoin(i));
+				myString = myString + masterJoin(i);
+
+				return myString;
+			} // END 'if'
+
+			writer.close();
+		} // END 'try'
+		catch (UnsupportedEncodingException ex) {
+			System.out.println("Unsupported encoding: " + ex.getMessage());
+		} // END 'catch'
+		catch (FileNotFoundException ex) {
+			System.out.println("Unable to print to file");
+		} // END 'catch'
+		
+		// This 'return' statement will NEVER be fulfilled as the 'return' statement that actually matters will always be returned in one of the 
+		// decision blocks above; I just have this 'return' statement below to comply with Java's rule of having a 'return' statement at the end
+		// of the method
+		return myString;
+
+	} // END 'join' method
+// ************************************************ STATIC METHODS BELOW **************************************************************
+	// Static method to handle joining any n-number of results tables coming from above's joins of raw data tables
+	private static String masterJoin(int i) {
+    		StringBuilder query = new StringBuilder();
+		int batchSize = 61; // MariaDB's limit
+    		int batches = Math.max(1, (int) Math.ceil((double) i / batchSize));
+
+    		if (i <= batchSize) {
+        		// If we have 61 or fewer tables, we can do a single JOIN operation
+			query.append("CREATE TABLE master_results AS SELECT results1.A_resname, results1.A_resnum, results1.A_resatom, results1.A_atomnum, results1.B_resname, results1.B_resnum, results1.B_resatom, results1.B_atomnum FROM results1 ");
+        		for (int j = 2; j <= i; j++) {
+            			query.append("JOIN results").append(j).append(" ON ");
+            			query.append("results").append(j-1).append(".A_resname = results").append(j).append(".A_resname AND ");
+            			query.append("results").append(j-1).append(".A_resnum = results").append(j).append(".A_resnum AND ");
+    			        query.append("results").append(j-1).append(".A_resatom = results").append(j).append(".A_resatom AND ");
+  			        query.append("results").append(j-1).append(".A_atomnum = results").append(j).append(".A_atomnum AND ");
+   			        query.append("results").append(j-1).append(".B_resname = results").append(j).append(".B_resname AND ");
+    			        query.append("results").append(j-1).append(".B_resnum = results").append(j).append(".B_resnum AND ");
+				query.append("results").append(j-1).append(".B_resatom = results").append(j).append(".B_resatom AND ");
+				query.append("results").append(j-1).append(".B_atomnum = results").append(j).append(".B_atomnum ");
+        		} // END 'for'
+        		query.append("; ");
+			} else {
+				// If we have more than 61 tables, we use the batching approach
+        			for (int batch = 0; batch < batches; batch++) {
+					int start = batch * batchSize + 1;
+					int end = Math.min((batch + 1) * batchSize, i);
+
+					query.append("CREATE TEMPORARY TABLE temp_batch").append(batch).append(" AS SELECT * FROM results").append(start).append(" ");
+
+					for (int j = start + 1; j <= end; j++) {
+                				query.append("JOIN results").append(j).append(" ON ");
+				        	query.append("results").append(j-1).append(".A_resname = results").append(j).append(".A_resname AND ");
+		          			query.append("results").append(j-1).append(".A_resnum = results").append(j).append(".A_resnum AND ");
+	        				query.append("results").append(j-1).append(".A_resatom = results").append(j).append(".A_resatom AND ");
+        					query.append("results").append(j-1).append(".A_atomnum = results").append(j).append(".A_atomnum AND ");
+        					query.append("results").append(j-1).append(".B_resname = results").append(j).append(".B_resname AND ");
+        					query.append("results").append(j-1).append(".B_resnum = results").append(j).append(".B_resnum AND ");
+        					query.append("results").append(j-1).append(".B_resatom = results").append(j).append(".B_resatom AND ");
+        					query.append("results").append(j-1).append(".B_atomnum = results").append(j).append(".B_atomnum ");
+        	    			} // END 'for'
+					query.append("; ");
+				} // END 'for'
+
+			// Combine all temporary tables into the final master_results
+			query.append("CREATE TABLE master_results AS SELECT * FROM temp_batch0 ");
+			for (int k = 1; k < batches; k++) {
+            			query.append("JOIN temp_batch").append(k).append(" ON ");
+            			query.append("temp_batch").append(k-1).append(".A_resname = temp_batch").append(k).append(".A_resname AND ");
+			        query.append("temp_batch").append(k-1).append(".A_resnum = temp_batch").append(k).append(".A_resnum AND ");
+            			query.append("temp_batch").append(k-1).append(".A_resatom = temp_batch").append(k).append(".A_resatom AND ");
+            			query.append("temp_batch").append(k-1).append(".A_atomnum = temp_batch").append(k).append(".A_atomnum AND ");
+            			query.append("temp_batch").append(k-1).append(".B_resname = temp_batch").append(k).append(".B_resname AND ");
+            			query.append("temp_batch").append(k-1).append(".B_resnum = temp_batch").append(k).append(".B_resnum AND ");
+            			query.append("temp_batch").append(k-1).append(".B_resatom = temp_batch").append(k).append(".B_resatom AND ");
+            			query.append("temp_batch").append(k-1).append(".B_atomnum = temp_batch").append(k).append(".B_atomnum ");
+        		} // END 'for'
+        		query.append("; ");
+
+			// Clean up temporary tables
+			for (int m = 0; m < batches; m++) {
+				query.append("DROP TEMPORARY TABLE temp_batch").append(m).append("; ");
+			} // END 'for'
+		} // END 'for'
+
+		return query.toString();		
+	} // END 'masterJoin'
+} // END 'flexibleJoin'
+

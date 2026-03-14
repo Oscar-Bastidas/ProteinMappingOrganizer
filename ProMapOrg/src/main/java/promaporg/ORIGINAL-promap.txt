@@ -1,0 +1,34 @@
+package promaporg;
+
+import java.sql.*;
+
+public class promap {
+	public static void main (String[] args) {
+		// Get total number of files to convert to csv from user
+		int maxNumOfFiles = Integer.parseInt(args[0]);
+		// Iteratively convert multispaced delimiter to csv
+		for (int i = 1; i <= maxNumOfFiles; i++) { 
+			IterativeFileProcessor convert = new IterativeFileProcessor(i);
+			convert.getCsv();
+		} // END 'for'
+		
+		// Now load each and every csv file to MariaDB tables
+		IterativeLoader iterativeLoader = new IterativeLoader(maxNumOfFiles);
+		try { // Must use 'try' since I'm using method that can throw SQLException
+			iterativeLoader.loadFiles();
+		} // END 'try' block
+		catch (SQLException ex) {
+			System.out.println("Not connected from 'main'");
+			ex.printStackTrace();
+		} // END 'catch' block
+
+		// Join all of the tables to find common interactions across all snapshots
+		try {
+			iterativeLoader.tableJoins();
+		} // END 'try' block
+		catch (SQLException e) {
+			System.out.println("Not connected from 'main'");
+			e.printStackTrace();
+		} // END 'catch' block
+	} // END 'main'
+} // END 'promap' class 

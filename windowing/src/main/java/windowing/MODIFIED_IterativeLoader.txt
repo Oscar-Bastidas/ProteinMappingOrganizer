@@ -1,0 +1,119 @@
+package windowing;
+
+import java.sql.*;
+import java.io.*;
+
+import java.io.PrintWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+
+// This custom class loads formatted mapping files into MariaDB tables and then does table joins on all loaded files
+
+public class IterativeLoader {
+	// Declaring instance fields
+	// Total quantity of snapshots to process
+	private int windowSize;
+	// Username
+	private String user;
+	// Password
+	private String password;
+	// Database name
+	private String database;
+	// Starting snapshot
+	private int startIncrementor;
+	// Ending snapshot
+	private int endIncrementor;
+	// Results table index
+	private int currentResultsTableIndex;
+	// Total quantity of snapshots in the entire dataset (NOT simply window size snapshots)
+	private int totalQuantity;
+	// Get working directory
+	private String cwd = System.getProperty("user.dir");
+	// Database URL location (local)
+	private String dbURL;
+	// Establish connection to the database
+	private Connection conn = null;
+	// Make a 'PreparedStatement' object
+	private Statement statement = null;
+
+	// Constructor to initiate instance field
+	public IterativeLoader(String user, String password, String database, int startIncrementor, int endIncrementor, int totalQuantity, int currentResultsTableIndex) {
+		this.user = user;
+		this.password = password;
+		this.database = database;
+		this.startIncrementor = startIncrementor;
+		this.endIncrementor = endIncrementor;
+		this.currentResultsTableIndex = currentResultsTableIndex;
+		this.dbURL = "jdbc:mariadb://127.0.0.1:3306/?user=" + user + "&password=" + password + "&allowMultiQueries=true&useSSL=false";
+		this.windowSize = endIncrementor - startIncrementor + 1;
+	} // END constructor
+		
+	// Method to build & submit table joins - tables must have first been - should previous connection've been closed?  could it have been kept open?
+	public void tableJoins () throws SQLException { // 'throws SQLException' MUST explicitly be shown since code that opens DB connection that triggers
+	// SQLException was technically not used in this method but in previous method instead, however this method must close the connection which is an
+	// action that would throw a SQLException; the open connection remains valid across methods because the connection object is an instance field which
+	// is visible/"global" across all methods in this class
+		
+		FlexibleJoin myJoin = new FlexibleJoin(windowSize, startIncrementor, endIncrementor, currentResultsTableIndex);
+
+		try {
+			// !!! Opening a connection to the 'conn' object isn't necessary since connection was opened in another method & 'conn'
+			// is an instance field !!!
+			// !!! Doing 'conn.setAutoCommit(false);' is not required as its execution in previous method remains valid even here !!!
+			// Connect to the database
+                        conn = DriverManager.getConnection(dbURL);
+
+			// Wrap the SQL string command into something SQL can directly process
+                	statement = conn.createStatement();
+
+			// Disable 'AutoCommit' in order to send batch or 'transaction' SQL commands
+			conn.setAutoCommit(false);
+
+                	// Now submit the command to MariaDB
+                	statement.execute("USE " + database + ";" +  myJoin.join());
+                	// Now actually execute the submitted commands in MariaDB (like hitting the 'Enter' key to execute)
+                	conn.commit();
+
+			// CREATES SERIES OF FILES TO CONCATENATE LATER
+			printsToFile(database, startIncrementor, myJoin);
+
+		} // END 'try' block
+		catch (SQLException e) {
+                        System.out.println("\n\n\nNot connected.");
+                        e.printStackTrace();
+                                                                                                                                                                                       // If any of the SQL commands should fail for whatever reason, abort all
+                        // commands and rollback to DB's pr3vious state
+                        conn.rollback();                                                                                                                                               e.printStackTrace();                                                                                                                                   } // END 'catch' block
+		// 'finally' block is ALWAYS executed, so it serves as a cleanup code repository
+		// for closing connections and what not whether an exception is triggered or not
+		finally {
+			statement.close();
+			conn.setAutoCommit(true);
+			conn.close();
+		} // END 'finally' block
+
+	} // END method 'tableJoins'
+// STATIC METHOD BELOW ****************************************************************************************************************
+	// This method ia to generate an actual string to be printed in a file containing the the sql code which I'll copy and paste into
+	// MariaDB the command line - doing this because the machine I need to run sqlmin doesn't have Java and cannot install it
+	private static void printsToFile (String database, int startIncrementor, FlexibleJoin myJoin) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("USE ");
+		sb.append(database);
+		sb.append(";");
+		sb.append(myJoin.join());
+		
+		String command = sb.toString();
+		String cwd = System.getProperty("user.dir");
+
+		try {
+			PrintWriter myWriter = new PrintWriter(cwd + File.separator + "command" + startIncrementor + ".sql");
+			myWriter.println(command);
+			myWriter.close();
+		} // END 'try'
+		catch (FileNotFoundException ex) {
+			System.out.println("Unable to print file");
+		} // END 'catch'
+
+	} // END 'printsToFile' static method
+} // END 'IterativeLoader' class
